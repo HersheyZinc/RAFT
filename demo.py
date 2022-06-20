@@ -63,7 +63,7 @@ def demo(args):
 
     outpath = args.outpath
     os.makedirs(outpath, exist_ok=True)
-    for_path, back_path = os.path.join(outpath, "forward_flow"), os.path.join(outpath, "backward_flow")
+    for_path, back_path = os.path.join(outpath, "flow"), os.path.join(outpath, "flow_backward")
     os.makedirs(for_path, exist_ok=True)
     os.makedirs(back_path, exist_ok=True)
 
