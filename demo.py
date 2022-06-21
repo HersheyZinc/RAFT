@@ -10,7 +10,7 @@ import torch
 from PIL import Image
 
 from raft import RAFT
-from utils import flow_viz
+from utils import flow_viz, frame_utils
 from utils.utils import InputPadder
 
 
@@ -22,18 +22,6 @@ def load_image(imfile):
     img = torch.from_numpy(img).permute(2, 0, 1).float()
     return img[None].to(DEVICE)
 
-
-def save_flo(flow, filename):
-    flow = flow[0].permute(1,2,0).cpu().numpy()
-    f = open(filename, 'wb')
-    magic = np.array([202021.25], dtype=np.float32)
-    height, width = flow.shape[:2]
-    magic.tofile(f)
-    np.int32(width).tofile(f)
-    np.int32(height).tofile(f)
-    data = np.float32(flow).flatten()
-    data.tofile(f)
-    f.close() 
 
 
 def viz(img, flo):
@@ -79,12 +67,19 @@ def demo(args):
 
             padder = InputPadder(image1.shape)
             image1, image2 = padder.pad(image1, image2)
+            name = "{:05d}.flo".format(i)
+            i+=1
 
             flow_low, flow_up = model(image1, image2, iters=20, test_mode=True)
-            name = "{:05d}.flo".format(i)
-            save_flo(flow_low, os.path.join(back_path, name))
-            save_flo(flow_up, os.path.join(for_path, name))
-            i+=1
+            flow_low, flow_down = model(image2, image1, iters=20, test_mode=True)
+            flow_up_ = padder.unpad(flow_up[0]).permute(1, 2, 0).cpu().numpy()
+            flow_down_ = padder.unpad(flow_down[0]).permute(1, 2, 0).cpu().numpy()
+            filename_fr = imfile1.split("/")[-1].split(".")[0]
+            filename_bk = imfile2.split("/")[-1].split(".")[0]
+            output_file_up = os.path.join(for_path, name)
+            output_file_down = os.path.join(back_path,name)
+            frame_utils.writeFlow(output_file_up, flow_up_)
+            frame_utils.writeFlow(output_file_down, flow_down_)
 
 
 if __name__ == '__main__':
